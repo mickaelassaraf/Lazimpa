@@ -80,8 +80,11 @@ def get_params(params):
                         help="Impatient listener")
     parser.add_argument('--print_message', type=bool, default=False,
                         help='Print message ?')
-    parser.add_argument('--reg', type=bool, default=False,
-                        help='Add regularization ?')
+    parser.add_argument('--reg', type=bool, default=False,help='Add regularization ?')
+    
+    parser.add_argument('--p', type=float, default=0.5,
+                        help="proba")
+    
 
     args = core.init(parser, params)
 
@@ -352,7 +355,7 @@ def main(params):
     else:
         game = SenderImpatientReceiverRnnReinforce(sender, receiver, loss_impatient, sender_entropy_coeff=opts.sender_entropy_coeff,
                                            receiver_entropy_coeff=opts.receiver_entropy_coeff,
-                                           length_cost=opts.length_cost,unigram_penalty=opts.unigram_pen,reg=opts.reg)
+                                           length_cost=opts.length_cost,unigram_penalty=opts.unigram_pen,reg=opts.reg,p=opts.p)
 
     optimizer = core.build_optimizer(game.parameters())
 
