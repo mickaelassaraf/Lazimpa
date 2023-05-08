@@ -683,7 +683,7 @@ class SenderImpatientReceiverRnnReinforce(nn.Module):
     When reg is set to True, the regularization scheduling is applied (Lazy Speaker).
     """
     def __init__(self, sender, receiver, loss, sender_entropy_coeff, receiver_entropy_coeff,
-                 length_cost=0.0,unigram_penalty=0.0,reg=False):
+                 length_cost=0.0,unigram_penalty=0.0,p=0.5,reg=False):
         """
         :param sender: sender agent
         :param receiver: receiver agent
@@ -714,9 +714,39 @@ class SenderImpatientReceiverRnnReinforce(nn.Module):
 
         self.mean_baseline = defaultdict(float)
         self.n_points = defaultdict(float)
+        self.p=p
 
     def forward(self, sender_input, labels, receiver_input=None):
         message, log_prob_s, entropy_s = self.sender(sender_input)
+
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+        print("Utilisation de", device)
+        if self.training:
+        
+            tensor=message
+            # Définition de la probabilité p
+            p = self.p
+
+            # Création d'un tenseur de la même taille que "tensor" contenant des valeurs booléennes indiquant les emplacements des zéros sur le GPU
+            zero_tensor = tensor == 0
+
+            # Création d'un tenseur de la même taille que "tensor" contenant des nombres aléatoires centrés sur 0 sur le GPU
+            random_tensor = torch.randn(tensor.size(), device=device)
+
+            # Création d'un tenseur de la même taille que "tensor" contenant des valeurs booléennes en fonction de la probabilité p sur le GPU
+            boolean_tensor = random_tensor > p
+
+            # Création d'un tenseur de la même taille que "tensor" contenant des valeurs aléatoires entre 1 et 39, sauf pour les valeurs où "zero_tensor" est True, qui contiennent des zéros sur le GPU
+            new_tensor = (1-zero_tensor)*(tensor*(1-boolean_tensor)+(torch.randint(1, 20, size=tensor.size(),device=device)).float()*boolean_tensor
+
+            # Conversion du tenseur en type de données entier
+            new_tensor = new_tensor.long()
+            message= new_tensor                             
+                                      
+
         message_lengths = find_lengths(message)
 
         # If impatient 1
