@@ -719,11 +719,9 @@ class SenderImpatientReceiverRnnReinforce(nn.Module):
     def forward(self, sender_input, labels, receiver_input=None):
         message, log_prob_s, entropy_s = self.sender(sender_input)
 
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-        else:
-            device = torch.device("cpu")
-        print("Utilisation de", device)
+        
+        device = torch.device("cuda")
+        
         if self.training:
         
             tensor=message
@@ -731,16 +729,16 @@ class SenderImpatientReceiverRnnReinforce(nn.Module):
             p = self.p
 
             # Création d'un tenseur de la même taille que "tensor" contenant des valeurs booléennes indiquant les emplacements des zéros sur le GPU
-            zero_tensor = tensor == 0
+            zero_tensor = (tensor == 0).float()
 
             # Création d'un tenseur de la même taille que "tensor" contenant des nombres aléatoires centrés sur 0 sur le GPU
-            random_tensor = torch.randn(tensor.size(), device=device)
+            random_tensor = (torch.randn(tensor.size(), device=device)).float()
 
             # Création d'un tenseur de la même taille que "tensor" contenant des valeurs booléennes en fonction de la probabilité p sur le GPU
-            boolean_tensor = random_tensor > p
+            boolean_tensor = (random_tensor > p).float()
 
             # Création d'un tenseur de la même taille que "tensor" contenant des valeurs aléatoires entre 1 et 39, sauf pour les valeurs où "zero_tensor" est True, qui contiennent des zéros sur le GPU
-            new_tensor = (1-zero_tensor)*(tensor*(1-boolean_tensor)+(torch.randint(1, 20, size=tensor.size(),device=device)).float()*boolean_tensor
+            new_tensor = (1-zero_tensor)*(tensor*(1-boolean_tensor)+(torch.randint(1, 20, size=tensor.size(),device=device)).float()*boolean_tensor)
 
             # Conversion du tenseur en type de données entier
             new_tensor = new_tensor.long()
